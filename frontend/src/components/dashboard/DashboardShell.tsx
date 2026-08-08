@@ -131,8 +131,8 @@ export function DashboardShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#eef1f6]">
-      <aside className="flex w-72 shrink-0 flex-col border-r border-slate-800/50 bg-[#0f172a] text-white">
+    <div className="flex h-screen overflow-hidden bg-[#eef1f6]">
+      <aside className="flex h-full w-72 shrink-0 flex-col border-r border-slate-800/50 bg-[#0f172a] text-white">
         <div className="border-b border-white/10 px-5 py-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
             Interview Agent
@@ -219,9 +219,9 @@ export function DashboardShell({
         </div>
       </aside>
 
-      <div className="flex min-h-0 min-w-0 flex-1">
-        <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-slate-200 bg-white px-8 py-6 shadow-sm">
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
+        <header className="shrink-0 border-b border-slate-200 bg-white px-8 py-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-5">
             <CandidateAvatar seed={member.id} name={member.name} size="lg" />
             <div>
@@ -378,7 +378,7 @@ export function DashboardShell({
         </div>
 
         {view === "profile" ? (
-          <div className="sticky top-0 hidden h-screen min-h-0 shrink-0 lg:block">
+          <div className="hidden h-full min-h-0 shrink-0 overflow-y-auto lg:block">
             <InterviewScoreboard currentCandidateId={member.id} />
           </div>
         ) : null}

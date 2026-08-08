@@ -37,7 +37,7 @@ export function InterviewScoreboard({
   const completedCount = entries.filter((e) => e.finalScore !== null).length;
 
   return (
-    <aside className="flex h-screen w-72 shrink-0 flex-col border-l border-slate-200 bg-white">
+    <aside className="flex h-full w-72 shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="border-b border-slate-100 px-4 py-4">
         <h3 className="text-sm font-semibold text-slate-900">Cohort scoreboard</h3>
         <p className="mt-0.5 text-xs text-slate-500">
