@@ -32,7 +32,7 @@ const TERMS = [
     id: "phone",
     title: "No secondary devices",
     label:
-      "Using a mobile phone to scan or photograph questions is prohibited and may be detected.",
+      "Using a mobile phone during the test is prohibited. The webcam checks for a phone in frame.",
   },
 ] as const;
 

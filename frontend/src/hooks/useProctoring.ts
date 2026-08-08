@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { detectPhoneHeuristic } from "@/lib/proctoring/phoneDetection";
 
 export type ProctorViolation = {
   id: string;
@@ -78,6 +79,8 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gazeMissRef = useRef(0);
+  const phoneStreakRef = useRef(0);
+  const lastPhoneReportRef = useRef(0);
   const examFullscreenActiveRef = useRef(false);
   const lastFullscreenViolationRef = useRef(0);
   const [violations, setViolations] = useState<ProctorViolation[]>([]);
@@ -152,6 +155,31 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       if (now - lastFullscreenViolationRef.current < 800) return;
       lastFullscreenViolationRef.current = now;
       report("fullscreen_exit", message);
+    },
+    [report],
+  );
+
+  const notePhoneSignal = useCallback(
+    (detected: boolean) => {
+      if (detected) {
+        phoneStreakRef.current += 1;
+      } else {
+        phoneStreakRef.current = 0;
+        return;
+      }
+
+      if (phoneStreakRef.current < 2) return;
+
+      const now = Date.now();
+      if (now - lastPhoneReportRef.current < 12_000) return;
+
+      lastPhoneReportRef.current = now;
+      phoneStreakRef.current = 0;
+      report(
+        "phone_detected",
+        "Mobile phone or secondary device detected in the webcam — remove it from view.",
+      );
+      setLiveStatus("Phone detected in frame");
     },
     [report],
   );
@@ -255,16 +283,16 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
           "Webcam appears covered or blocked. Uncover the camera to continue.",
         );
         setLiveStatus("Camera covered");
+        phoneStreakRef.current = 0;
         return;
       }
 
-      if (stats.brightClusterRatio > 0.12 && stats.skinRatio < 0.04) {
-        report(
-          "phone_detected",
-          "Possible mobile device or secondary screen detected near the camera.",
-        );
-        setLiveStatus("Secondary device suspected");
-      }
+      const phoneLikely = detectPhoneHeuristic(
+        frame.data,
+        canvas.width,
+        canvas.height,
+      );
+      notePhoneSignal(phoneLikely);
 
       if (stats.skinRatio < 0.03) {
         gazeMissRef.current += 1;
@@ -276,14 +304,17 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
           gazeMissRef.current = 0;
         }
         setLiveStatus("Face not in frame");
-      } else {
+      } else if (!phoneLikely) {
         gazeMissRef.current = 0;
         setLiveStatus("Monitoring: OK");
+      } else {
+        gazeMissRef.current = 0;
+        setLiveStatus("Checking for phone…");
       }
     }, 2000);
 
     return () => window.clearInterval(interval);
-  }, [cameraReady, enabled, report]);
+  }, [cameraReady, enabled, notePhoneSignal, report]);
 
   useEffect(() => {
     if (!enabled || !cameraReady || !streamRef.current) return;
@@ -295,6 +326,8 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       stopCamera();
       setViolations([]);
       gazeMissRef.current = 0;
+      phoneStreakRef.current = 0;
+      lastPhoneReportRef.current = 0;
       examFullscreenActiveRef.current = false;
       lastFullscreenViolationRef.current = 0;
     }
