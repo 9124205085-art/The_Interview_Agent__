@@ -32,7 +32,7 @@ const TERMS = [
     id: "phone",
     title: "No secondary devices",
     label:
-      "Using a mobile phone during the test is prohibited. The webcam checks for a phone in frame.",
+      "Using a mobile phone during the test is prohibited. An on-device AI model scans the webcam for cell phones.",
   },
 ] as const;
 

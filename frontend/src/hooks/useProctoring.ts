@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { detectPhoneHeuristic } from "@/lib/proctoring/phoneDetection";
+import {
+  createPhoneDetector,
+  detectPhoneViaVisionApi,
+  type PhoneDetector,
+} from "@/lib/proctoring/phoneDetection";
 
 export type ProctorViolation = {
   id: string;
@@ -81,6 +85,10 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   const gazeMissRef = useRef(0);
   const phoneStreakRef = useRef(0);
   const lastPhoneReportRef = useRef(0);
+  const phoneDetectorRef = useRef<PhoneDetector | null>(null);
+  const phoneDetectBusyRef = useRef(false);
+  const phonePendingRef = useRef(false);
+  const useVisionPhoneRef = useRef(false);
   const examFullscreenActiveRef = useRef(false);
   const lastFullscreenViolationRef = useRef(0);
   const [violations, setViolations] = useState<ProctorViolation[]>([]);
@@ -252,6 +260,34 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   useEffect(() => {
     if (!enabled || !cameraReady) return;
 
+    let cancelled = false;
+    setLiveStatus("Loading phone detection…");
+
+    void createPhoneDetector().then((detector) => {
+      if (cancelled) {
+        detector?.dispose();
+        return;
+      }
+      phoneDetectorRef.current = detector;
+      if (detector) {
+        useVisionPhoneRef.current = false;
+        setLiveStatus("Monitoring: OK");
+      } else {
+        useVisionPhoneRef.current = true;
+        setLiveStatus("Using cloud phone detection…");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      phoneDetectorRef.current?.dispose();
+      phoneDetectorRef.current = null;
+    };
+  }, [cameraReady, enabled]);
+
+  useEffect(() => {
+    if (!enabled || !cameraReady) return;
+
     if (!canvasRef.current) {
       canvasRef.current = document.createElement("canvas");
     }
@@ -284,15 +320,42 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
         );
         setLiveStatus("Camera covered");
         phoneStreakRef.current = 0;
+        phonePendingRef.current = false;
         return;
       }
 
-      const phoneLikely = detectPhoneHeuristic(
-        frame.data,
-        canvas.width,
-        canvas.height,
-      );
-      notePhoneSignal(phoneLikely);
+      const runPhoneDetection = () => {
+        if (phoneDetectBusyRef.current) return;
+
+        const detector = phoneDetectorRef.current;
+        if (detector) {
+          phoneDetectBusyRef.current = true;
+          void detector
+            .detect(video)
+            .then((detected) => {
+              phonePendingRef.current = detected;
+              notePhoneSignal(detected);
+            })
+            .finally(() => {
+              phoneDetectBusyRef.current = false;
+            });
+          return;
+        }
+
+        if (!useVisionPhoneRef.current) return;
+
+        phoneDetectBusyRef.current = true;
+        void detectPhoneViaVisionApi(canvas)
+          .then((detected) => {
+            phonePendingRef.current = detected;
+            notePhoneSignal(detected);
+          })
+          .finally(() => {
+            phoneDetectBusyRef.current = false;
+          });
+      };
+
+      runPhoneDetection();
 
       if (stats.skinRatio < 0.03) {
         gazeMissRef.current += 1;
@@ -304,14 +367,20 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
           gazeMissRef.current = 0;
         }
         setLiveStatus("Face not in frame");
-      } else if (!phoneLikely) {
+      } else if (phonePendingRef.current) {
+        gazeMissRef.current = 0;
+        setLiveStatus("Phone detected — remove from view");
+      } else if (!phoneDetectorRef.current && !useVisionPhoneRef.current) {
         gazeMissRef.current = 0;
         setLiveStatus("Monitoring: OK");
+      } else if (phoneDetectBusyRef.current) {
+        gazeMissRef.current = 0;
+        setLiveStatus("Scanning for phone…");
       } else {
         gazeMissRef.current = 0;
-        setLiveStatus("Checking for phone…");
+        setLiveStatus("Monitoring: OK");
       }
-    }, 2000);
+    }, 2500);
 
     return () => window.clearInterval(interval);
   }, [cameraReady, enabled, notePhoneSignal, report]);
@@ -328,6 +397,10 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       gazeMissRef.current = 0;
       phoneStreakRef.current = 0;
       lastPhoneReportRef.current = 0;
+      phonePendingRef.current = false;
+      useVisionPhoneRef.current = false;
+      phoneDetectorRef.current?.dispose();
+      phoneDetectorRef.current = null;
       examFullscreenActiveRef.current = false;
       lastFullscreenViolationRef.current = 0;
     }
