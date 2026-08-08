@@ -125,6 +125,33 @@ export async function buildInterviewQuestions(
   return questions;
 }
 
+/** Topic metadata for each question (no LLM personalization). */
+export function buildInterviewQuestionsOutline(
+  days: CurriculumDay[],
+  modules: CurriculumModule[],
+): Pick<InterviewQuestion, "id" | "day" | "dayTitle" | "moduleTitle">[] {
+  const questions: Pick<
+    InterviewQuestion,
+    "id" | "day" | "dayTitle" | "moduleTitle"
+  >[] = [];
+  let q = 0;
+  for (const day of days) {
+    const mod =
+      moduleForDay(day.day, modules) ??
+      ({ n: 0, title: "Cohort", days: [day.day, day.day] } as CurriculumModule);
+    for (const _slot of [1, 2] as const) {
+      q += 1;
+      questions.push({
+        id: `q-${q}`,
+        day: day.day,
+        dayTitle: day.title,
+        moduleTitle: mod.title,
+      });
+    }
+  }
+  return questions;
+}
+
 export function canStartInterview(completedDays: CurriculumDay[]): {
   ok: boolean;
   message?: string;

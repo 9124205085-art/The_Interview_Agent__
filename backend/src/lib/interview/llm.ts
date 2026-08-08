@@ -1,3 +1,108 @@
+import type { InterviewQuestionScore } from "../../types/interview";
+
+function heuristicQuestionScore(
+  question: string,
+  answer: string,
+): InterviewQuestionScore {
+  const text = answer.trim();
+  const len = text.length;
+  const words = text.split(/\s+/).filter(Boolean).length;
+
+  let accuracy = 35;
+  if (len >= 40) accuracy += 15;
+  if (len >= 120) accuracy += 20;
+  if (len >= 250) accuracy += 15;
+  if (/\b(because|therefore|for example|such as)\b/i.test(text)) accuracy += 10;
+
+  let depth = 30;
+  if (words >= 25) depth += 15;
+  if (words >= 60) depth += 20;
+  if (/\b(trade-off|architecture|implement|deploy|evaluate|security)\b/i.test(text)) {
+    depth += 15;
+  }
+  if (/\b(RAG|LLM|embedding|vector|API|agent|MCP)\b/i.test(text)) depth += 10;
+
+  let context = 35;
+  if (question.length > 0 && text.length > 20) context += 20;
+  if (/\b(module|day|project|cohort|mission)\b/i.test(text)) context += 10;
+  if (len >= 80) context += 15;
+
+  const clamp = (n: number) => Math.min(100, Math.max(0, Math.round(n)));
+  const accuracyC = clamp(accuracy);
+  const depthC = clamp(depth);
+  const contextC = clamp(context);
+  return {
+    questionId: "",
+    accuracy: accuracyC,
+    depth: depthC,
+    context: contextC,
+    composite: Math.round((accuracyC + depthC + contextC) / 3),
+  };
+}
+
+export async function scoreInterviewAnswer(
+  questionId: string,
+  question: string,
+  answer: string,
+  jobRole: string,
+): Promise<InterviewQuestionScore> {
+  const fallback = heuristicQuestionScore(question, answer);
+  fallback.questionId = questionId;
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return fallback;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              'Score the candidate answer for a technical interview. Return JSON only: {"accuracy":number,"depth":number,"context":number} where each is 0-100. accuracy=correctness/relevance, depth=technical detail, context=communication & situational fit. Be fair; short but correct answers can score 60+.',
+          },
+          {
+            role: "user",
+            content: JSON.stringify({ jobRole, question, answer }),
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return fallback;
+    const data = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const raw = data.choices?.[0]?.message?.content;
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as {
+      accuracy?: number;
+      depth?: number;
+      context?: number;
+    };
+    const clamp = (n: number) => Math.min(100, Math.max(0, Math.round(n)));
+    const accuracy = clamp(parsed.accuracy ?? fallback.accuracy);
+    const depth = clamp(parsed.depth ?? fallback.depth);
+    const context = clamp(parsed.context ?? fallback.context);
+    return {
+      questionId,
+      accuracy,
+      depth,
+      context,
+      composite: Math.round((accuracy + depth + context) / 3),
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 export async function personalizeQuestion(
   template: string,
   context: string,

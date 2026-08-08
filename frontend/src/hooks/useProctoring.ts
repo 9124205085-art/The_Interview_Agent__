@@ -10,7 +10,8 @@ export type ProctorViolation = {
     | "camera_covered"
     | "camera_off"
     | "gaze"
-    | "phone_detected";
+    | "phone_detected"
+    | "fullscreen_exit";
   message: string;
   at: number;
 };
@@ -77,6 +78,8 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const gazeMissRef = useRef(0);
+  const examFullscreenActiveRef = useRef(false);
+  const lastFullscreenViolationRef = useRef(0);
   const [violations, setViolations] = useState<ProctorViolation[]>([]);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -119,6 +122,22 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     }
   }, []);
 
+  const bindVideoStream = useCallback(async (): Promise<boolean> => {
+    const stream = streamRef.current;
+    const video = videoRef.current;
+    if (!stream) return false;
+    if (!video) return false;
+    if (video.srcObject !== stream) {
+      video.srcObject = stream;
+    }
+    try {
+      await video.play();
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -126,6 +145,16 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     setCameraReady(false);
     setLiveStatus("Camera stopped");
   }, []);
+
+  const reportFullscreenExit = useCallback(
+    (message: string) => {
+      const now = Date.now();
+      if (now - lastFullscreenViolationRef.current < 800) return;
+      lastFullscreenViolationRef.current = now;
+      report("fullscreen_exit", message);
+    },
+    [report],
+  );
 
   useEffect(() => {
     if (!enabled) return;
@@ -152,8 +181,29 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       e.preventDefault();
     };
 
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      reportFullscreenExit(
+        "ESC pressed during the proctored exam — stay in full screen (−10 integrity points).",
+      );
+    };
+
+    const onFullscreenChange = () => {
+      if (document.fullscreenElement) {
+        examFullscreenActiveRef.current = true;
+        return;
+      }
+      if (examFullscreenActiveRef.current) {
+        reportFullscreenExit(
+          "Full-screen mode exited during the test (−10 integrity points). Press ESC is monitored.",
+        );
+      }
+    };
+
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("blur", onBlur);
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
     document.addEventListener("copy", blockClipboard);
     document.addEventListener("cut", blockClipboard);
     document.addEventListener("paste", blockClipboard);
@@ -162,12 +212,14 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("blur", onBlur);
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
       document.removeEventListener("copy", blockClipboard);
       document.removeEventListener("cut", blockClipboard);
       document.removeEventListener("paste", blockClipboard);
       document.removeEventListener("contextmenu", blockContext);
     };
-  }, [enabled, report]);
+  }, [enabled, report, reportFullscreenExit]);
 
   useEffect(() => {
     if (!enabled || !cameraReady) return;
@@ -234,10 +286,17 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   }, [cameraReady, enabled, report]);
 
   useEffect(() => {
+    if (!enabled || !cameraReady || !streamRef.current) return;
+    void bindVideoStream();
+  }, [bindVideoStream, cameraReady, enabled]);
+
+  useEffect(() => {
     if (!enabled) {
       stopCamera();
       setViolations([]);
       gazeMissRef.current = 0;
+      examFullscreenActiveRef.current = false;
+      lastFullscreenViolationRef.current = 0;
     }
   }, [enabled, stopCamera]);
 
@@ -249,6 +308,7 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     liveStatus,
     startCamera,
     stopCamera,
+    bindVideoStream,
     report,
   };
 }

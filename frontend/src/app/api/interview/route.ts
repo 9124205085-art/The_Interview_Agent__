@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurriculum } from "@backend/lib/data";
 import type { CandidateRecord } from "@backend/types/candidate";
+import type { InterviewProctoringCounts } from "@backend/types/interview";
 import {
   continueInterviewSession,
+  finishInterviewEarly,
   startInterviewSession,
 } from "@backend/lib/interview/handleInterview";
 
@@ -10,6 +12,8 @@ type InterviewBody = {
   sessionId: string;
   candidate?: CandidateRecord;
   message?: string;
+  action?: "finish";
+  proctoring?: InterviewProctoringCounts;
 };
 
 export async function POST(request: Request) {
@@ -42,10 +46,22 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   }
 
+  if (body.action === "finish") {
+    const result = await finishInterviewEarly(
+      body.sessionId,
+      body.proctoring,
+    );
+    if ("error" in result) {
+      return NextResponse.json({ error: result.error }, { status: result.status });
+    }
+    return NextResponse.json(result);
+  }
+
   if (body.message?.trim()) {
     const result = await continueInterviewSession(
       body.sessionId,
       body.message.trim(),
+      body.proctoring,
     );
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });

@@ -8,27 +8,33 @@ export default async function InterviewTestPage() {
   const curriculum = getCurriculum();
 
   return (
-    <div className="min-h-full bg-[#eef1f6]">
-      <header className="border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+    <div className="min-h-full bg-gradient-to-b from-slate-100 via-[#eef1f6] to-slate-100">
+      <header className="border-b border-slate-200/80 bg-white/90 px-6 py-5 shadow-sm backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
               Proctored AI interview
             </p>
-            <h1 className="text-lg font-semibold text-slate-900">
-              {candidate.member.name} · {candidate.member.id}
-            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+                {candidate.member.name}
+              </h1>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-medium text-slate-600">
+                {candidate.member.id}
+              </span>
+            </div>
           </div>
           <Link
-            href="/dashboard"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            href="/dashboard?profile=1"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
           >
-            ← Back to dashboard
+            <span aria-hidden>←</span>
+            Back to dashboard
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-10">
         <InterviewSession
           candidate={candidate}
           curriculumDays={curriculum.days}

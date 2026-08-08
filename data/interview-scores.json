@@ -1,0 +1,190 @@
+{
+  "results": [
+    {
+      "finalScore": 49,
+      "performanceRaw": 64.3,
+      "sAccuracy": 73.8,
+      "sDepth": 51.3,
+      "sContext": 71.3,
+      "integrityPenalty": 15,
+      "proctoring": {
+        "tab": 0,
+        "paste": 1,
+        "webcam_covered": 0
+      },
+      "questionsAnswered": 8,
+      "totalQuestions": 8,
+      "questionMarks": [
+        {
+          "questionId": "q-1",
+          "marks": 8
+        },
+        {
+          "questionId": "q-2",
+          "marks": 9
+        },
+        {
+          "questionId": "q-3",
+          "marks": 9
+        },
+        {
+          "questionId": "q-4",
+          "marks": 8
+        },
+        {
+          "questionId": "q-5",
+          "marks": 8
+        },
+        {
+          "questionId": "q-6",
+          "marks": 8
+        },
+        {
+          "questionId": "q-7",
+          "marks": 8
+        },
+        {
+          "questionId": "q-8",
+          "marks": 8
+        }
+      ],
+      "questionScores": [
+        {
+          "questionId": "q-1",
+          "accuracy": 70,
+          "depth": 55,
+          "context": 70,
+          "composite": 65
+        },
+        {
+          "questionId": "q-2",
+          "accuracy": 85,
+          "depth": 55,
+          "context": 70,
+          "composite": 70
+        },
+        {
+          "questionId": "q-3",
+          "accuracy": 85,
+          "depth": 55,
+          "context": 70,
+          "composite": 70
+        },
+        {
+          "questionId": "q-4",
+          "accuracy": 70,
+          "depth": 45,
+          "context": 70,
+          "composite": 62
+        },
+        {
+          "questionId": "q-5",
+          "accuracy": 70,
+          "depth": 45,
+          "context": 70,
+          "composite": 62
+        },
+        {
+          "questionId": "q-6",
+          "accuracy": 70,
+          "depth": 55,
+          "context": 70,
+          "composite": 65
+        },
+        {
+          "questionId": "q-7",
+          "accuracy": 70,
+          "depth": 45,
+          "context": 80,
+          "composite": 65
+        },
+        {
+          "questionId": "q-8",
+          "accuracy": 70,
+          "depth": 55,
+          "context": 70,
+          "composite": 65
+        }
+      ],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-08T05:38:54.249Z"
+    },
+    {
+      "finalScore": 0,
+      "performanceRaw": 0,
+      "sAccuracy": 0,
+      "sDepth": 0,
+      "sContext": 0,
+      "integrityPenalty": 20,
+      "proctoring": {
+        "tab": 2,
+        "paste": 0,
+        "webcam_covered": 0
+      },
+      "questionsAnswered": 0,
+      "totalQuestions": 8,
+      "questionMarks": [],
+      "questionScores": [],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-08T05:59:23.656Z"
+    },
+    {
+      "finalScore": 0,
+      "performanceRaw": 0,
+      "sAccuracy": 0,
+      "sDepth": 0,
+      "sContext": 0,
+      "integrityPenalty": 0,
+      "proctoring": {
+        "tab": 0,
+        "paste": 0,
+        "webcam_covered": 0
+      },
+      "questionsAnswered": 0,
+      "totalQuestions": 8,
+      "questionMarks": [],
+      "questionScores": [],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-08T05:59:51.512Z"
+    },
+    {
+      "finalScore": 0,
+      "performanceRaw": 0,
+      "sAccuracy": 0,
+      "sDepth": 0,
+      "sContext": 0,
+      "integrityPenalty": 20,
+      "proctoring": {
+        "tab": 2,
+        "paste": 0,
+        "webcam_covered": 0
+      },
+      "questionsAnswered": 0,
+      "totalQuestions": 8,
+      "questionMarks": [],
+      "questionScores": [],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-08T06:09:03.149Z"
+    },
+    {
+      "finalScore": 0,
+      "performanceRaw": 0,
+      "sAccuracy": 0,
+      "sDepth": 0,
+      "sContext": 0,
+      "integrityPenalty": 10,
+      "proctoring": {
+        "tab": 0,
+        "paste": 0,
+        "webcam_covered": 0,
+        "esc": 1
+      },
+      "questionsAnswered": 0,
+      "totalQuestions": 8,
+      "questionMarks": [],
+      "questionScores": [],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-08T06:13:25.335Z"
+    }
+  ]
+}

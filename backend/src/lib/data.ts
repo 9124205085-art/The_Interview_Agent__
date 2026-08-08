@@ -5,9 +5,9 @@ import type {
   CandidatesFile,
   CurriculumFile,
 } from "../types/candidate";
+import { getRepoDataDir } from "./dataPaths";
 
-/** Repo-root `data/` when Next.js runs from `frontend/`. */
-const dataDir = path.join(process.cwd(), "..", "data");
+const dataDir = getRepoDataDir();
 
 function readJsonFile<T>(filename: string): T {
   const filePath = path.join(dataDir, filename);
