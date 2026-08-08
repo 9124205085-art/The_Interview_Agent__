@@ -2,6 +2,10 @@
 
 Monorepo-style layout: **frontend** (Next.js UI), **backend** (server logic), **data**, and **docs**.
 
+**Repository:** [https://github.com/9124205085-art/The_Interview_Agent__.git](https://github.com/9124205085-art/The_Interview_Agent__.git)
+
+**Submission docs:** [PROMPTS.md](./PROMPTS.md) — AI prompts used to build this project.
+
 ---
 
 ## Folder map (read in this order)
@@ -20,6 +24,7 @@ The_Interview_Agent/
 ├── frontend/       ← Next.js app (run dev from repo root)
 ├── backend/        ← imported by frontend API routes
 ├── package.json    ← npm run dev / build (delegates to frontend)
+├── PROMPTS.md      ← prompts + git link (for online submission)
 └── README.md
 ```
 
