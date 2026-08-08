@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { btnPrimary } from "@/lib/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -79,7 +78,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 font-medium ${btnPrimary}`}
+            className="w-full rounded-none bg-slate-200 py-3 font-medium text-slate-900 transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-200 disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-400"
           >
             {loading ? "Signing in…" : "Continue to dashboard"}
           </button>
