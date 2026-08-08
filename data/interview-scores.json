@@ -185,6 +185,26 @@
       "questionScores": [],
       "candidateId": "CAND-006",
       "completedAt": "2026-08-08T06:13:25.335Z"
+    },
+    {
+      "finalScore": 0,
+      "performanceRaw": 0,
+      "sAccuracy": 0,
+      "sDepth": 0,
+      "sContext": 0,
+      "integrityPenalty": 10,
+      "proctoring": {
+        "tab": 1,
+        "paste": 0,
+        "webcam_covered": 0,
+        "esc": 0
+      },
+      "questionsAnswered": 0,
+      "totalQuestions": 8,
+      "questionMarks": [],
+      "questionScores": [],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-08T10:18:37.427Z"
     }
   ]
 }

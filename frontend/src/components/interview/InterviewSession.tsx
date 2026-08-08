@@ -14,6 +14,7 @@ import {
 import { useSpeech } from "@/hooks/useSpeech";
 import { useProctoring } from "@/hooks/useProctoring";
 import { InterviewTermsModal } from "@/components/interview/InterviewTermsModal";
+import { btnPrimaryLg, btnPrimaryMd } from "@/lib/ui";
 
 type ChatMessage = {
   id: string;
@@ -423,7 +424,7 @@ export function InterviewSession({
                 <button
                   type="button"
                   onClick={() => setTermsOpen(true)}
-                  className="shrink-0 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-500"
+                  className={`shrink-0 ${btnPrimaryLg}`}
                 >
                   Start interview
                 </button>
@@ -613,7 +614,7 @@ export function InterviewSession({
                       className={`max-w-[95%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap select-none ${
                         msg.role === "ai"
                           ? "bg-white text-slate-800 shadow-sm ring-1 ring-slate-200/80"
-                          : "bg-indigo-600 text-white"
+                          : "rounded-none bg-brand text-white"
                       }`}
                       onCopy={(e) => e.preventDefault()}
                     >
@@ -658,7 +659,7 @@ export function InterviewSession({
                       type="button"
                       onClick={() => submitAnswer(input)}
                       disabled={loading || !input.trim() || !cameraReady}
-                      className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+                      className={`${btnPrimaryMd} disabled:opacity-50`}
                     >
                       Send answer
                     </button>

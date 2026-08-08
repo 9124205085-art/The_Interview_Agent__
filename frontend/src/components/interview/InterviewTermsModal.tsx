@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { btnPrimaryMd } from "@/lib/ui";
 
 const TERMS = [
   {
@@ -116,7 +117,7 @@ export function InterviewTermsModal({
       >
         <div className="border-b border-slate-100 bg-gradient-to-br from-slate-50 to-white px-6 py-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-md shadow-indigo-600/25">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-none bg-brand text-white shadow-md shadow-black/20">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
@@ -139,7 +140,7 @@ export function InterviewTermsModal({
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full rounded-full bg-indigo-600 transition-all duration-300 ease-out"
+                className="h-full rounded-none bg-brand transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -161,7 +162,7 @@ export function InterviewTermsModal({
                   <span
                     className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
                       checked
-                        ? "border-indigo-600 bg-indigo-600 text-white"
+                        ? "border-brand bg-brand text-white"
                         : "border-slate-300 bg-white group-hover:border-slate-400"
                     }`}
                   >
@@ -208,7 +209,7 @@ export function InterviewTermsModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-none border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -216,7 +217,7 @@ export function InterviewTermsModal({
             type="button"
             disabled={!allChecked || loading}
             onClick={onAccept}
-            className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
+            className={`${btnPrimaryMd} shadow-md shadow-black/15 disabled:shadow-none`}
           >
             {loading ? "Starting session…" : "Start proctored test"}
           </button>

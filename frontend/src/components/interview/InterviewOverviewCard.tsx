@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import { btnPrimaryMd } from "@/lib/ui";
 import type { CandidateMission, CurriculumDay } from "@backend/types/candidate";
 import {
   canStartInterview,
@@ -45,11 +46,11 @@ export function InterviewOverviewCard({
       <div className="mt-5 flex flex-wrap gap-3">
         <Link
           href="/dashboard/interview"
-          className={`inline-flex rounded-lg px-5 py-2.5 text-sm font-medium ${
+          className={
             gate.ok
-              ? "bg-indigo-600 text-white hover:bg-indigo-500"
-              : "pointer-events-none bg-slate-200 text-slate-500"
-          }`}
+              ? `inline-flex ${btnPrimaryMd}`
+              : "inline-flex rounded-none px-5 py-2.5 text-sm font-medium pointer-events-none bg-slate-200 text-slate-500"
+          }
           aria-disabled={!gate.ok}
         >
           Go to interview test

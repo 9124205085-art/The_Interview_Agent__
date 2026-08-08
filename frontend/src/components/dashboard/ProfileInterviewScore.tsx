@@ -208,7 +208,7 @@ export function ProfileInterviewScore({
                 </span>
               </button>
             </div>
-            <div className="rounded-xl bg-indigo-600 px-5 py-3 text-center text-white shadow-md shadow-indigo-600/20">
+            <div className="rounded-none bg-brand px-5 py-3 text-center text-white shadow-md shadow-black/15">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-100">
                 Final mark
               </p>
