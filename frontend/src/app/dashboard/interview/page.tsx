@@ -12,7 +12,7 @@ export default async function InterviewTestPage() {
       <header className="border-b border-slate-200/80 bg-white/90 px-6 py-5 shadow-sm backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-600">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
               Proctored AI interview
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
