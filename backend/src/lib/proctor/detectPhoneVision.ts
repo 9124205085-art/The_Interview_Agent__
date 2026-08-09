@@ -58,7 +58,7 @@ export async function detectPhoneInWebcamImage(
     return (
       parsed.phoneVisible === true &&
       typeof parsed.confidence === "number" &&
-      parsed.confidence >= 0.72
+      parsed.confidence >= 0.58
     );
   } catch {
     return false;

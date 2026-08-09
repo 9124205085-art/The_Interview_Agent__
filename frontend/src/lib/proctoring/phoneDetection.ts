@@ -1,12 +1,11 @@
 /** Minimum COCO confidence for "cell phone" (0–1). */
-export const PHONE_SCORE_THRESHOLD = 0.48;
+export const PHONE_SCORE_THRESHOLD = 0.35;
 
-/** Fraction of frame area the bounding box must cover. */
-const MIN_BBOX_AREA_RATIO = 0.008;
-const MAX_BBOX_AREA_RATIO = 0.42;
+const MIN_BBOX_AREA_RATIO = 0.004;
+const MAX_BBOX_AREA_RATIO = 0.5;
 
 export type PhoneDetector = {
-  detect: (video: HTMLVideoElement) => Promise<boolean>;
+  detectCanvas: (canvas: HTMLCanvasElement) => Promise<boolean>;
   dispose: () => void;
 };
 
@@ -35,16 +34,25 @@ function isValidPhoneBox(
   }
 
   const aspect = w / h;
-  if (aspect < 0.22 || aspect > 2.8) return false;
-
-  if (x + w < 0 || y + h < 0 || x > videoWidth || y > videoHeight) {
-    return false;
-  }
+  if (aspect < 0.18 || aspect > 3.2) return false;
 
   return true;
 }
 
-/** Loads COCO-SSD in the browser and detects cell phones in webcam frames. */
+function runCocoOnSource(
+  model: { detect: (input: HTMLCanvasElement) => Promise<CocoPrediction[]> },
+  canvas: HTMLCanvasElement,
+): Promise<boolean> {
+  const w = canvas.width;
+  const h = canvas.height;
+  if (w <= 0 || h <= 0) return Promise.resolve(false);
+
+  return model.detect(canvas).then((predictions) =>
+    predictions.some((p) => isValidPhoneBox(p, w, h)),
+  );
+}
+
+/** Loads COCO-SSD in the browser. */
 export async function createPhoneDetector(): Promise<PhoneDetector | null> {
   try {
     const tf = await import("@tensorflow/tfjs");
@@ -57,19 +65,14 @@ export async function createPhoneDetector(): Promise<PhoneDetector | null> {
     }
 
     const coco = await import("@tensorflow-models/coco-ssd");
-    const model = await coco.load({ base: "lite_mobilenet_v2" });
+    const model = await coco.load();
 
     let disposed = false;
 
     return {
-      async detect(video: HTMLVideoElement) {
-        if (disposed || video.readyState < 2) return false;
-
-        const w = video.videoWidth || 640;
-        const h = video.videoHeight || 480;
-        const predictions = (await model.detect(video)) as CocoPrediction[];
-
-        return predictions.some((p) => isValidPhoneBox(p, w, h));
+      detectCanvas(canvas: HTMLCanvasElement) {
+        if (disposed) return Promise.resolve(false);
+        return runCocoOnSource(model, canvas);
       },
       dispose() {
         disposed = true;
@@ -80,10 +83,116 @@ export async function createPhoneDetector(): Promise<PhoneDetector | null> {
   }
 }
 
-/** JPEG base64 (no data: prefix) for vision API fallback. */
+function luminance(
+  data: Uint8ClampedArray,
+  width: number,
+  x: number,
+  y: number,
+): number {
+  const i = (y * width + x) * 4;
+  return 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+}
+
+/** Fallback when ML / vision API unavailable — tuned for handheld screen in frame. */
+export function detectPhoneHeuristic(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): boolean {
+  const cols = 14;
+  const rows = 10;
+  const cellW = Math.max(4, Math.floor(width / cols));
+  const cellH = Math.max(4, Math.floor(height / rows));
+
+  const active = new Set<string>();
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x0 = col * cellW;
+      const y0 = row * cellH;
+      let sum = 0;
+      let sumSq = 0;
+      let edgeSum = 0;
+      let n = 0;
+
+      for (let y = y0; y < Math.min(y0 + cellH, height - 1); y += 2) {
+        for (let x = x0; x < Math.min(x0 + cellW, width - 1); x += 2) {
+          const lum = luminance(data, width, x, y);
+          sum += lum;
+          sumSq += lum * lum;
+          edgeSum +=
+            Math.abs(lum - luminance(data, width, x + 1, y)) +
+            Math.abs(lum - luminance(data, width, x, y + 1));
+          n += 1;
+        }
+      }
+      if (n === 0) continue;
+      const mean = sum / n;
+      const variance = Math.max(0, sumSq / n - mean * mean);
+      const edge = edgeSum / n;
+
+      const screenLike =
+        variance > 220 && mean > 50 && mean < 240 && edge > 10;
+      if (screenLike) active.add(`${row},${col}`);
+    }
+  }
+
+  let bestArea = 0;
+  let bestAspect = 0;
+  const seen = new Set<string>();
+
+  for (const key of active) {
+    if (seen.has(key)) continue;
+    const queue = [key];
+    seen.add(key);
+    let minR = rows;
+    let maxR = 0;
+    let minC = cols;
+    let maxC = 0;
+    let area = 0;
+
+    while (queue.length > 0) {
+      const cur = queue.pop()!;
+      const [rs, cs] = cur.split(",");
+      const r = Number(rs);
+      const c = Number(cs);
+      area += 1;
+      minR = Math.min(minR, r);
+      maxR = Math.max(maxR, r);
+      minC = Math.min(minC, c);
+      maxC = Math.max(maxC, c);
+      for (const [nr, nc] of [
+        [r - 1, c],
+        [r + 1, c],
+        [r, c - 1],
+        [r, c + 1],
+      ]) {
+        const nk = `${nr},${nc}`;
+        if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+        if (!active.has(nk) || seen.has(nk)) continue;
+        seen.add(nk);
+        queue.push(nk);
+      }
+    }
+
+    const bw = maxC - minC + 1;
+    const bh = maxR - minR + 1;
+    if (area > bestArea) {
+      bestArea = area;
+      bestAspect = bw / Math.max(1, bh);
+    }
+  }
+
+  const gridArea = rows * cols;
+  if (bestArea < gridArea * 0.02 || bestArea > gridArea * 0.32) return false;
+  const portrait = bestAspect >= 0.35 && bestAspect <= 0.85;
+  const landscape = bestAspect >= 1.15 && bestAspect <= 2.4;
+  return portrait || landscape;
+}
+
 export function captureFrameBase64(
   canvas: HTMLCanvasElement,
-  maxWidth = 480,
+  maxWidth = 512,
 ): string {
   const srcW = canvas.width;
   const srcH = canvas.height;
@@ -99,23 +208,58 @@ export function captureFrameBase64(
   const ctx = scratch.getContext("2d");
   if (!ctx) return "";
   ctx.drawImage(canvas, 0, 0, outW, outH);
-  const dataUrl = scratch.toDataURL("image/jpeg", 0.72);
+  const dataUrl = scratch.toDataURL("image/jpeg", 0.75);
   const comma = dataUrl.indexOf(",");
   return comma >= 0 ? dataUrl.slice(comma + 1) : "";
 }
 
+export type VisionPhoneResult = {
+  phone: boolean;
+  visionEnabled: boolean;
+};
+
 export async function detectPhoneViaVisionApi(
   canvas: HTMLCanvasElement,
-): Promise<boolean> {
+): Promise<VisionPhoneResult> {
   const imageBase64 = captureFrameBase64(canvas);
-  if (!imageBase64) return false;
+  if (!imageBase64) return { phone: false, visionEnabled: false };
 
   const res = await fetch("/api/proctor/detect-phone", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ imageBase64 }),
   });
-  if (!res.ok) return false;
-  const data = (await res.json()) as { phone?: boolean };
-  return data.phone === true;
+  if (!res.ok) return { phone: false, visionEnabled: false };
+  const data = (await res.json()) as {
+    phone?: boolean;
+    visionEnabled?: boolean;
+  };
+  return {
+    phone: data.phone === true,
+    visionEnabled: data.visionEnabled === true,
+  };
+}
+
+/** Combines COCO, vision API, and heuristic fallback. */
+export async function detectPhoneInFrame(
+  canvas: HTMLCanvasElement,
+  frameData: Uint8ClampedArray,
+  detector: PhoneDetector | null,
+  visionEnabled: boolean,
+): Promise<{ phone: boolean; visionEnabled: boolean }> {
+  let visionActive = visionEnabled;
+
+  if (detector) {
+    const cocoHit = await detector.detectCanvas(canvas);
+    if (cocoHit) return { phone: true, visionEnabled: visionActive };
+  }
+
+  if (visionActive) {
+    const vision = await detectPhoneViaVisionApi(canvas);
+    visionActive = vision.visionEnabled;
+    if (vision.phone) return { phone: true, visionEnabled: visionActive };
+  }
+
+  const heuristic = detectPhoneHeuristic(frameData, canvas.width, canvas.height);
+  return { phone: heuristic, visionEnabled: visionActive };
 }

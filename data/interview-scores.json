@@ -265,6 +265,125 @@
       "questionScores": [],
       "candidateId": "CAND-006",
       "completedAt": "2026-08-08T11:15:40.812Z"
+    },
+    {
+      "finalScore": 10,
+      "performanceRaw": 50,
+      "sAccuracy": 50,
+      "sDepth": 40,
+      "sContext": 70,
+      "integrityPenalty": 40,
+      "proctoring": {
+        "tab": 0,
+        "paste": 1,
+        "webcam_covered": 1,
+        "esc": 2
+      },
+      "questionsAnswered": 1,
+      "totalQuestions": 8,
+      "questionMarks": [
+        {
+          "questionId": "q-1",
+          "marks": 7
+        }
+      ],
+      "questionScores": [
+        {
+          "questionId": "q-1",
+          "accuracy": 50,
+          "depth": 40,
+          "context": 70,
+          "composite": 53
+        }
+      ],
+      "topicResults": [
+        {
+          "questionNumber": 1,
+          "moduleTitle": "Embeddings & Vector Search",
+          "day": 7,
+          "dayTitle": "Embeddings Explained",
+          "composite": 53,
+          "marks": 7
+        },
+        {
+          "questionNumber": 2,
+          "moduleTitle": "Embeddings & Vector Search",
+          "day": 7,
+          "dayTitle": "Embeddings Explained",
+          "composite": 0,
+          "marks": 0
+        },
+        {
+          "questionNumber": 3,
+          "moduleTitle": "LLM Core, Prompting & Fine-Tuning",
+          "day": 12,
+          "dayTitle": "Prompt Engineering Fundamentals",
+          "composite": 0,
+          "marks": 0
+        },
+        {
+          "questionNumber": 4,
+          "moduleTitle": "LLM Core, Prompting & Fine-Tuning",
+          "day": 12,
+          "dayTitle": "Prompt Engineering Fundamentals",
+          "composite": 0,
+          "marks": 0
+        },
+        {
+          "questionNumber": 5,
+          "moduleTitle": "Chatbot Application Build",
+          "day": 17,
+          "dayTitle": "Chatbot Frontend Development",
+          "composite": 0,
+          "marks": 0
+        },
+        {
+          "questionNumber": 6,
+          "moduleTitle": "Chatbot Application Build",
+          "day": 17,
+          "dayTitle": "Chatbot Frontend Development",
+          "composite": 0,
+          "marks": 0
+        },
+        {
+          "questionNumber": 7,
+          "moduleTitle": "Production & Capstone",
+          "day": 31,
+          "dayTitle": "Capstone Project & Final Demo",
+          "composite": 0,
+          "marks": 0
+        },
+        {
+          "questionNumber": 8,
+          "moduleTitle": "Production & Capstone",
+          "day": 31,
+          "dayTitle": "Capstone Project & Final Demo",
+          "composite": 0,
+          "marks": 0
+        }
+      ],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-09T02:43:57.621Z"
+    },
+    {
+      "finalScore": 0,
+      "performanceRaw": 0,
+      "sAccuracy": 0,
+      "sDepth": 0,
+      "sContext": 0,
+      "integrityPenalty": 45,
+      "proctoring": {
+        "tab": 1,
+        "paste": 1,
+        "webcam_covered": 2,
+        "esc": 1
+      },
+      "questionsAnswered": 0,
+      "totalQuestions": 8,
+      "questionMarks": [],
+      "questionScores": [],
+      "candidateId": "CAND-006",
+      "completedAt": "2026-08-09T02:52:56.727Z"
     }
   ]
 }

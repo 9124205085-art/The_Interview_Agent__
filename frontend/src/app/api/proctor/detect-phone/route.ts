@@ -22,8 +22,16 @@ export async function POST(request: Request) {
 
   try {
     const phone = await detectPhoneInWebcamImage(raw);
-    return NextResponse.json({ phone, source: "vision" });
+    return NextResponse.json({
+      phone,
+      visionEnabled: Boolean(process.env.OPENAI_API_KEY?.trim()),
+      source: "vision",
+    });
   } catch {
-    return NextResponse.json({ phone: false, source: "vision" });
+    return NextResponse.json({
+      phone: false,
+      visionEnabled: Boolean(process.env.OPENAI_API_KEY?.trim()),
+      source: "vision",
+    });
   }
 }

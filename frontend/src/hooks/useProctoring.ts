@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createPhoneDetector,
-  detectPhoneViaVisionApi,
+  detectPhoneInFrame,
   type PhoneDetector,
 } from "@/lib/proctoring/phoneDetection";
 
@@ -88,7 +88,8 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   const phoneDetectorRef = useRef<PhoneDetector | null>(null);
   const phoneDetectBusyRef = useRef(false);
   const phonePendingRef = useRef(false);
-  const useVisionPhoneRef = useRef(false);
+  const useVisionPhoneRef = useRef(true);
+  const phoneModelReadyRef = useRef(false);
   const examFullscreenActiveRef = useRef(false);
   const lastFullscreenViolationRef = useRef(0);
   const [violations, setViolations] = useState<ProctorViolation[]>([]);
@@ -261,22 +262,25 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     if (!enabled || !cameraReady) return;
 
     let cancelled = false;
+    phoneModelReadyRef.current = false;
     setLiveStatus("Loading phone detection…");
 
-    void createPhoneDetector().then((detector) => {
-      if (cancelled) {
-        detector?.dispose();
-        return;
-      }
-      phoneDetectorRef.current = detector;
-      if (detector) {
-        useVisionPhoneRef.current = false;
-        setLiveStatus("Monitoring: OK");
-      } else {
-        useVisionPhoneRef.current = true;
-        setLiveStatus("Using cloud phone detection…");
-      }
-    });
+    void createPhoneDetector()
+      .then((detector) => {
+        if (cancelled) {
+          detector?.dispose();
+          return;
+        }
+        phoneDetectorRef.current = detector;
+        if (detector) {
+          setLiveStatus("Phone AI ready · monitoring");
+        } else {
+          setLiveStatus("Using backup phone detection…");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) phoneModelReadyRef.current = true;
+      });
 
     return () => {
       cancelled = true;
@@ -325,30 +329,19 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       }
 
       const runPhoneDetection = () => {
-        if (phoneDetectBusyRef.current) return;
-
-        const detector = phoneDetectorRef.current;
-        if (detector) {
-          phoneDetectBusyRef.current = true;
-          void detector
-            .detect(video)
-            .then((detected) => {
-              phonePendingRef.current = detected;
-              notePhoneSignal(detected);
-            })
-            .finally(() => {
-              phoneDetectBusyRef.current = false;
-            });
-          return;
-        }
-
-        if (!useVisionPhoneRef.current) return;
+        if (phoneDetectBusyRef.current || !phoneModelReadyRef.current) return;
 
         phoneDetectBusyRef.current = true;
-        void detectPhoneViaVisionApi(canvas)
-          .then((detected) => {
-            phonePendingRef.current = detected;
-            notePhoneSignal(detected);
+        void detectPhoneInFrame(
+          canvas,
+          frame.data,
+          phoneDetectorRef.current,
+          useVisionPhoneRef.current,
+        )
+          .then(({ phone, visionEnabled }) => {
+            useVisionPhoneRef.current = visionEnabled;
+            phonePendingRef.current = phone;
+            notePhoneSignal(phone);
           })
           .finally(() => {
             phoneDetectBusyRef.current = false;
@@ -398,7 +391,8 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       phoneStreakRef.current = 0;
       lastPhoneReportRef.current = 0;
       phonePendingRef.current = false;
-      useVisionPhoneRef.current = false;
+      phoneModelReadyRef.current = false;
+      useVisionPhoneRef.current = true;
       phoneDetectorRef.current?.dispose();
       phoneDetectorRef.current = null;
       examFullscreenActiveRef.current = false;
