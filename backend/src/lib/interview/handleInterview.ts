@@ -25,6 +25,7 @@ import {
   getSession,
   recordAnswer,
 } from "./sessionStore";
+import { materializeFollowUpQuestion } from "./followUp";
 
 function normalizeProctoring(
   input?: InterviewProctoringCounts,
@@ -114,6 +115,7 @@ export async function startInterviewSession(
     sessionId,
     candidate,
     questions,
+    days,
     days.map((d) => d.day),
   );
 
@@ -174,16 +176,22 @@ export async function continueInterviewSession(
     };
   }
 
-  const next = session.questions[session.answerIndex];
-  const idx = session.answerIndex + 1;
-  const reply = `${ack}\n\nQuestion score: ${questionScore.composite}/100 (accuracy ${questionScore.accuracy}, depth ${questionScore.depth}, context ${questionScore.context}).\n\nQuestion ${idx} of ${TOTAL_QUESTIONS} (Module: ${next.moduleTitle}, Day ${next.day}):\n${next.text}`;
+  const nextIndex = session.answerIndex;
+  const nextText = await materializeFollowUpQuestion(
+    session,
+    nextIndex,
+    session.interviewDays,
+  );
+  const next = session.questions[nextIndex];
+  const idx = nextIndex + 1;
+  const reply = `${ack}\n\nQuestion score: ${questionScore.composite}/100 (accuracy ${questionScore.accuracy}, depth ${questionScore.depth}, context ${questionScore.context}).\n\nQuestion ${idx} of ${TOTAL_QUESTIONS} (Module: ${next.moduleTitle}, Day ${next.day}):\n${nextText || next.text}`;
 
   return {
     reply,
     done: false,
     questionIndex: idx,
     totalQuestions: TOTAL_QUESTIONS,
-    currentQuestion: next.text,
+    currentQuestion: nextText || next.text,
     questionScore,
   };
 }

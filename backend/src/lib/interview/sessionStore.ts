@@ -1,4 +1,5 @@
 import type { CandidateRecord } from "../../types/candidate";
+import type { CurriculumDay } from "../../types/candidate";
 import type { InterviewQuestion, InterviewFeedback } from "../../types/interview";
 import type { InterviewQuestionScore } from "../../types/interview";
 
@@ -6,6 +7,7 @@ export type InterviewSession = {
   sessionId: string;
   candidate: CandidateRecord;
   questions: InterviewQuestion[];
+  interviewDays: CurriculumDay[];
   selectedDayNumbers: number[];
   answerIndex: number;
   answers: { questionId: string; text: string }[];
@@ -19,12 +21,14 @@ export function createSession(
   sessionId: string,
   candidate: CandidateRecord,
   questions: InterviewQuestion[],
+  interviewDays: CurriculumDay[],
   selectedDayNumbers: number[],
 ): InterviewSession {
   const session: InterviewSession = {
     sessionId,
     candidate,
     questions,
+    interviewDays,
     selectedDayNumbers,
     answerIndex: 0,
     answers: [],

@@ -4,6 +4,8 @@ export type InterviewQuestion = {
   dayTitle: string;
   moduleTitle: string;
   text: string;
+  /** Second question per day — generated from the prior answer before it is asked */
+  followUpPending?: boolean;
 };
 
 export type InterviewFeedback = {

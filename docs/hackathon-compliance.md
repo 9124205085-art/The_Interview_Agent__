@@ -22,9 +22,8 @@ Mapping of this repository to the **AI Interview Agent** hackathon brief and [te
 | Goal | Status | Notes |
 |------|--------|--------|
 | Assess completed concepts | ✅ Strong | Questions tied to completed days and module titles |
-| Natural adaptation | ⚠️ Partial | Acknowledgments after each answer; optional LLM question rephrase at start |
-| Follow-ups from prior responses | ⚠️ Partial | **Planned** follow-up per day (question 2 on same day); not a fully dynamic “next question only from last answer” agent |
-| Real interview feel | ✅ Good | UI, voice/text, proctoring, scoring — beyond minimum |
+| Follow-ups from prior responses | ✅ | **Q2 each day** generated via `generateFollowUpQuestion` after Q1 answer (LLM + answer-aware fallback) |
+| Natural adaptation | ✅ | Acknowledgments + dynamic follow-ups referencing the candidate’s words |
 | Actionable feedback | ✅ | With or without `OPENAI_API_KEY` |
 
 ---

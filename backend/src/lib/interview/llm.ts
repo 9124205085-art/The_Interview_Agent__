@@ -145,6 +145,66 @@ export async function personalizeQuestion(
   }
 }
 
+export async function generateFollowUpQuestion(input: {
+  candidateName: string;
+  jobRole: string;
+  day: number;
+  dayTitle: string;
+  moduleTitle: string;
+  objectives?: string[];
+  tools?: string[];
+  previousQuestion: string;
+  previousAnswer: string;
+  fallback: string;
+}): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return input.fallback;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        temperature: 0.65,
+        max_tokens: 160,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a senior technical interviewer in an AI engineering cohort. Ask ONE follow-up question that references something specific the candidate said in their previous answer (quote or paraphrase a phrase). Probe implementation detail, trade-offs, or evaluation—not a generic new topic. Under 55 words. No numbering or labels.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              candidateName: input.candidateName,
+              jobRole: input.jobRole,
+              cohortDay: input.day,
+              dayTitle: input.dayTitle,
+              module: input.moduleTitle,
+              objectives: input.objectives?.slice(0, 2),
+              tools: input.tools?.slice(0, 3),
+              previousQuestion: input.previousQuestion,
+              previousAnswer: input.previousAnswer,
+            }),
+          },
+        ],
+      }),
+    });
+    if (!res.ok) return input.fallback;
+    const data = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const text = data.choices?.[0]?.message?.content?.trim();
+    return text && text.length > 20 ? text : input.fallback;
+  } catch {
+    return input.fallback;
+  }
+}
+
 export async function briefAcknowledgment(
   question: string,
   answer: string,

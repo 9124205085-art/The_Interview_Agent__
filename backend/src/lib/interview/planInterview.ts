@@ -71,6 +71,24 @@ function moduleForDay(
   });
 }
 
+export function followUpFallbackTemplate(
+  day: CurriculumDay,
+  member: CandidateMember,
+  previousQuestion: string,
+  previousAnswer: string,
+): string {
+  const snippet = previousAnswer.trim().slice(0, 100);
+  const quoted =
+    snippet.length > 15
+      ? `"${snippet}${previousAnswer.trim().length > 100 ? "…" : ""}"`
+      : "your last point";
+  return `${member.name}, following up on Day ${day.day} (${day.title}): you said ${quoted} in response to my earlier question. Pick one detail from that—architecture, tooling, or evaluation—and explain how you implemented it and what trade-off you considered.`;
+}
+
+export function isFollowUpQuestion(question: InterviewQuestion): boolean {
+  return question.followUpPending === true;
+}
+
 function questionTemplates(
   day: CurriculumDay,
   member: CandidateMember,
@@ -105,20 +123,32 @@ export async function buildInterviewQuestions(
 
     for (const slot of [1, 2] as const) {
       q += 1;
-      let text = questionTemplates(day, member, slot);
-      if (personalize) {
-        text = await personalize(
+      if (slot === 1) {
+        let text = questionTemplates(day, member, 1);
+        if (personalize) {
+          text = await personalize(
+            text,
+            `Day ${day.day} ${day.title}; candidate ${member.id} ${member.jobRole}`,
+          );
+        }
+        questions.push({
+          id: `q-${q}`,
+          day: day.day,
+          dayTitle: day.title,
+          moduleTitle: mod.title,
           text,
-          `Day ${day.day} ${day.title}; candidate ${member.id} ${member.jobRole}`,
-        );
+          followUpPending: false,
+        });
+      } else {
+        questions.push({
+          id: `q-${q}`,
+          day: day.day,
+          dayTitle: day.title,
+          moduleTitle: mod.title,
+          text: "",
+          followUpPending: true,
+        });
       }
-      questions.push({
-        id: `q-${q}`,
-        day: day.day,
-        dayTitle: day.title,
-        moduleTitle: mod.title,
-        text,
-      });
     }
   }
 

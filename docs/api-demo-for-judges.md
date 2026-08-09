@@ -124,7 +124,7 @@ curl -s -X POST "$BASE/api/interview" -H "Content-Type: application/json" \
 | **Auth** | API has **no auth** (per spec). UI login is optional for the demo portal. |
 | **Session** | State is keyed by **`sessionId`** in server memory — keep the same ID for all turns on **one running server**. |
 | **Personalization** | Questions come from the candidate’s **completed missions** and cohort **curriculum** (modules, days, tools, objectives). |
-| **Follow-ups** | Two questions per selected day; second question is a **same-day** deep-dive. Turn replies include **LLM or template acknowledgments** referencing the prior answer. |
+| **Follow-ups** | After each **first question of a day**, the **second question** is generated from that answer (`backend/src/lib/interview/followUp.ts`, `llm.ts`). |
 | **Deployment** | Prefer a **long-running** Node host (Railway, Render, VPS). Serverless multi-instance hosts may lose in-memory sessions mid-interview. |
 
 Contract reference: [technical-spec.md](./technical-spec.md) · Compliance summary: [hackathon-compliance.md](./hackathon-compliance.md)
