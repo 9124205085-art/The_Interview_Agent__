@@ -4,7 +4,8 @@ Monorepo-style layout: **frontend** (Next.js UI), **backend** (server logic), **
 
 **Repository:** [https://github.com/9124205085-art/The_Interview_Agent__.git](https://github.com/9124205085-art/The_Interview_Agent__.git)
 
-**Submission docs:** [PROMPTS.md](./PROMPTS.md) — AI prompts used to build this project.
+**Submission docs:** [PROMPTS.md](./PROMPTS.md) — AI prompts used to build this project.  
+**Hackathon:** [docs/hackathon-compliance.md](./docs/hackathon-compliance.md) · [docs/api-demo-for-judges.md](./docs/api-demo-for-judges.md)
 
 ---
 
@@ -25,6 +26,7 @@ The_Interview_Agent/
 ├── backend/        ← imported by frontend API routes
 ├── package.json    ← npm run dev / build (delegates to frontend)
 ├── PROMPTS.md      ← prompts + git link (for online submission)
+├── docs/           ← technical-spec, hackathon-compliance, api-demo-for-judges
 └── README.md
 ```
 
@@ -78,3 +80,19 @@ If problems persist, delete stale caches **only at the repo root** (not inside `
 | `POST /api/auth/*`, `POST /api/interview` | frontend routes → backend libs |
 
 Contract: [docs/technical-spec.md](./docs/technical-spec.md)
+
+---
+
+## Hackathon compliance
+
+This project targets the **AI Cohort Interview Agent** challenge: personalized multi-turn interviews from curriculum + candidate JSON, **`POST /api/interview`**, 8 questions across 4 completed days, and structured final feedback.
+
+| Doc | Purpose |
+|-----|---------|
+| [docs/hackathon-compliance.md](./docs/hackathon-compliance.md) | Requirement checklist vs implementation |
+| [docs/api-demo-for-judges.md](./docs/api-demo-for-judges.md) | PowerShell/curl steps to exercise the API |
+| [docs/technical-spec.md](./docs/technical-spec.md) | Official request/response contract |
+
+**Quick UI demo:** `npm run dev` → `/login` (e.g. `CAND-001`) → **Go to interview test** on the dashboard.
+
+**Quick API demo:** See [api-demo-for-judges.md](./docs/api-demo-for-judges.md) — use the same `sessionId` for all turns while the dev server is running.

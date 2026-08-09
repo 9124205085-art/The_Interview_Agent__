@@ -5,6 +5,8 @@ Project requirements and API contracts for the AI Technical Interviewer.
 | File | Description |
 |------|-------------|
 | [technical-spec.md](./technical-spec.md) | Official `POST /api/interview` flow, request/response shapes, and feedback format |
+| [hackathon-compliance.md](./hackathon-compliance.md) | Hackathon minimum requirements vs this repo |
+| [api-demo-for-judges.md](./api-demo-for-judges.md) | Step-by-step API demo for evaluators |
 
 ## Implementation
 
