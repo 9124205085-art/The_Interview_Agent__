@@ -23,8 +23,9 @@ export async function detectPhoneInWebcamImage(
               type: "text",
               text: [
                 "This is a proctoring webcam frame during an online exam.",
-                "Is a handheld mobile phone or smartphone clearly visible in the image?",
-                "Do NOT count laptops, desktop monitors, tablets, or watches.",
+                "Is a handheld mobile phone or smartphone visible anywhere in this webcam frame?",
+                "Include phones held near the face, beside the head, or toward the camera (screen or back).",
+                "Do NOT count only laptops, desktop monitors, or wall posters.",
                 'Reply with JSON only: {"phoneVisible":boolean,"confidence":number between 0 and 1}',
               ].join(" "),
             },
@@ -32,7 +33,7 @@ export async function detectPhoneInWebcamImage(
               type: "image_url",
               image_url: {
                 url: `data:image/jpeg;base64,${imageBase64}`,
-                detail: "low",
+                detail: "high",
               },
             },
           ],
@@ -58,7 +59,7 @@ export async function detectPhoneInWebcamImage(
     return (
       parsed.phoneVisible === true &&
       typeof parsed.confidence === "number" &&
-      parsed.confidence >= 0.58
+      parsed.confidence >= 0.5
     );
   } catch {
     return false;

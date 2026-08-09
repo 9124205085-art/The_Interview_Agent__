@@ -113,7 +113,11 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 640, height: 480 },
+        video: {
+          facingMode: "user",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
       streamRef.current = stream;
@@ -171,9 +175,9 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
   const notePhoneSignal = useCallback(
     (detected: boolean) => {
       if (detected) {
-        phoneStreakRef.current += 1;
+        phoneStreakRef.current = Math.min(phoneStreakRef.current + 1, 4);
       } else {
-        phoneStreakRef.current = 0;
+        phoneStreakRef.current = Math.max(0, phoneStreakRef.current - 1);
         return;
       }
 
@@ -262,7 +266,6 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
     if (!enabled || !cameraReady) return;
 
     let cancelled = false;
-    phoneModelReadyRef.current = false;
     setLiveStatus("Loading phone detection…");
 
     void createPhoneDetector()
@@ -281,6 +284,8 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       .finally(() => {
         if (!cancelled) phoneModelReadyRef.current = true;
       });
+
+    phoneModelReadyRef.current = true;
 
     return () => {
       cancelled = true;
@@ -329,7 +334,7 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
       }
 
       const runPhoneDetection = () => {
-        if (phoneDetectBusyRef.current || !phoneModelReadyRef.current) return;
+        if (phoneDetectBusyRef.current) return;
 
         phoneDetectBusyRef.current = true;
         void detectPhoneInFrame(
@@ -373,7 +378,7 @@ export function useProctoring({ enabled, onViolation }: UseProctoringOptions) {
         gazeMissRef.current = 0;
         setLiveStatus("Monitoring: OK");
       }
-    }, 2500);
+    }, 2000);
 
     return () => window.clearInterval(interval);
   }, [cameraReady, enabled, notePhoneSignal, report]);
