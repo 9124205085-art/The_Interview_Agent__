@@ -15,6 +15,10 @@ import { useSpeech } from "@/hooks/useSpeech";
 import { useProctoring } from "@/hooks/useProctoring";
 import { InterviewTermsModal } from "@/components/interview/InterviewTermsModal";
 import { btnPrimaryLg, btnPrimaryMd } from "@/lib/ui";
+import {
+  formatInterviewTimeLeft,
+  INTERVIEW_TIME_LIMIT_SEC,
+} from "@/lib/interviewConfig";
 
 type ChatMessage = {
   id: string;
@@ -71,7 +75,11 @@ export function InterviewSession({
   const [error, setError] = useState<string | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [lastQuestionScore, setLastQuestionScore] = useState<number | null>(null);
+  const [timeLeftSec, setTimeLeftSec] = useState(INTERVIEW_TIME_LIMIT_SEC);
+  const [timeExpired, setTimeExpired] = useState(false);
   const draftRef = useRef("");
+  const deadlineRef = useRef<number | null>(null);
+  const timeUpHandledRef = useRef(false);
   const router = useRouter();
 
   const {
@@ -125,6 +133,35 @@ export function InterviewSession({
 
   const inExamRoom = active || done;
 
+  const startInterviewTimer = useCallback(() => {
+    deadlineRef.current = Date.now() + INTERVIEW_TIME_LIMIT_SEC * 1000;
+    timeUpHandledRef.current = false;
+    setTimeExpired(false);
+    setTimeLeftSec(INTERVIEW_TIME_LIMIT_SEC);
+  }, []);
+
+  const clearInterviewTimer = useCallback(() => {
+    deadlineRef.current = null;
+    timeUpHandledRef.current = false;
+    setTimeExpired(false);
+    setTimeLeftSec(INTERVIEW_TIME_LIMIT_SEC);
+  }, []);
+
+  useEffect(() => {
+    if (!active || done || !deadlineRef.current) return;
+
+    const tick = () => {
+      const deadline = deadlineRef.current;
+      if (!deadline) return;
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setTimeLeftSec(left);
+    };
+
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [active, done, sessionId]);
+
   const pushMessage = useCallback((role: ChatMessage["role"], text: string) => {
     setMessages((prev) => [
       ...prev,
@@ -145,6 +182,7 @@ export function InterviewSession({
         setLastQuestionScore(data.questionScore.composite);
       }
       if (data.done) {
+        clearInterviewTimer();
         setDone(true);
         setActive(false);
         setProctoring(false);
@@ -159,8 +197,115 @@ export function InterviewSession({
         }
       }
     },
-    [autoSpeak, pushMessage, router, speak, stopCamera, voiceSupported],
+    [autoSpeak, clearInterviewTimer, pushMessage, router, speak, stopCamera, voiceSupported],
   );
+
+  const finishInterviewSession = useCallback(
+    async (opts?: { timeUp?: boolean }) => {
+      stopListening();
+      stopSpeaking();
+      const counts = proctoringPayload();
+      setProctoring(false);
+      setActive(false);
+      clearInterviewTimer();
+      stopCamera();
+      exitExamFullscreen();
+      setLoading(true);
+
+      if (opts?.timeUp) {
+        setTimeExpired(true);
+      }
+
+      if (sessionId) {
+        try {
+          const res = await fetch("/api/interview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId,
+              action: "finish",
+              proctoring: counts,
+            }),
+          });
+          const data = (await res.json()) as InterviewTurnResponse & {
+            error?: string;
+          };
+          if (res.ok) {
+            handleAiReply(data);
+            setSessionId(null);
+            setInput("");
+            setActive(false);
+            setLoading(false);
+            if (opts?.timeUp) {
+              setError(
+                "Time is up — your 15-minute window ended. Remaining questions were not submitted.",
+              );
+            }
+            if (data.feedback?.score) {
+              router.refresh();
+              router.push("/dashboard?profile=1");
+            }
+            return;
+          }
+        } catch {
+          /* fall through to local summary */
+        }
+      }
+
+      setLoading(false);
+      setActive(false);
+      setDone(true);
+      setSessionId(null);
+      setInput("");
+      const endedEarly = opts?.timeUp
+        ? "The 15-minute interview window ended."
+        : "Interview ended.";
+      pushMessage(
+        "ai",
+        `${endedEarly} Thank you for your time. You may review the summary below or start a new session later.`,
+      );
+      setFeedback({
+        summary: opts?.timeUp
+          ? `${candidate.member.name}'s session ended when the 15-minute limit expired (question ${Math.min(questionIndex, TOTAL_QUESTIONS)} of ${TOTAL_QUESTIONS}).`
+          : `${candidate.member.name} ended the interview early (question ${Math.min(questionIndex, TOTAL_QUESTIONS)} of ${TOTAL_QUESTIONS}).`,
+        strengths: [
+          "Engaged with the proctored AI interview format.",
+          "Completed answers submitted before the session ended.",
+        ],
+        gaps: opts?.timeUp
+          ? [
+              "Not all eight questions were answered within the 15-minute time limit.",
+            ]
+          : [
+              "Full eight-question coverage was not completed in this attempt.",
+            ],
+        next: [
+          "Start a new session when ready to complete all module-based questions.",
+          "Review module daily tasks before your next attempt.",
+        ],
+      });
+    },
+    [
+      candidate.member.name,
+      clearInterviewTimer,
+      handleAiReply,
+      proctoringPayload,
+      pushMessage,
+      questionIndex,
+      router,
+      sessionId,
+      stopListening,
+      stopSpeaking,
+      stopCamera,
+    ],
+  );
+
+  useEffect(() => {
+    if (!active || done || timeLeftSec > 0 || !deadlineRef.current) return;
+    if (timeUpHandledRef.current) return;
+    timeUpHandledRef.current = true;
+    void finishInterviewSession({ timeUp: true });
+  }, [active, done, finishInterviewSession, timeLeftSec]);
 
   async function beginTestAfterTerms() {
     setError(null);
@@ -212,6 +357,7 @@ export function InterviewSession({
       };
       if (!res.ok) {
         setError(data.error ?? "Could not start interview");
+        clearInterviewTimer();
         setSessionId(null);
         setActive(false);
         setProctoring(false);
@@ -221,8 +367,10 @@ export function InterviewSession({
         return;
       }
       handleAiReply(data);
+      startInterviewTimer();
     } catch {
       setError("Network error while starting interview.");
+      clearInterviewTimer();
       setSessionId(null);
       setActive(false);
       setProctoring(false);
@@ -235,7 +383,7 @@ export function InterviewSession({
   }
 
   async function submitAnswer(text: string) {
-    if (!sessionId || !text.trim() || loading || done) return;
+    if (!sessionId || !text.trim() || loading || done || timeExpired) return;
     const answer = text.trim();
     pushMessage("candidate", answer);
     setInput("");
@@ -291,6 +439,7 @@ export function InterviewSession({
     setProctoring(false);
     setActive(false);
     exitExamFullscreen();
+    clearInterviewTimer();
     setDone(false);
     setSessionId(null);
     setMessages([]);
@@ -311,69 +460,7 @@ export function InterviewSession({
     ) {
       return;
     }
-    stopListening();
-    stopSpeaking();
-    const counts = proctoringPayload();
-    setProctoring(false);
-    setActive(false);
-    stopCamera();
-    exitExamFullscreen();
-    setLoading(true);
-
-    if (sessionId) {
-      try {
-        const res = await fetch("/api/interview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId,
-            action: "finish",
-            proctoring: counts,
-          }),
-        });
-        const data = (await res.json()) as InterviewTurnResponse & {
-          error?: string;
-        };
-        if (res.ok) {
-          handleAiReply(data);
-          setSessionId(null);
-          setInput("");
-          setActive(false);
-          setLoading(false);
-          if (data.feedback?.score) {
-            router.refresh();
-            router.push("/dashboard?profile=1");
-          }
-          return;
-        }
-      } catch {
-        /* fall through to local summary */
-      }
-    }
-
-    setLoading(false);
-    setActive(false);
-    setDone(true);
-    setSessionId(null);
-    setInput("");
-    pushMessage(
-      "ai",
-      "Interview ended. Thank you for your time. You may review the summary below or start a new session later.",
-    );
-    setFeedback({
-      summary: `${candidate.member.name} ended the interview early (question ${Math.min(questionIndex, TOTAL_QUESTIONS)} of ${TOTAL_QUESTIONS}).`,
-      strengths: [
-        "Engaged with the proctored AI interview format.",
-        "Completed answers submitted before ending the session.",
-      ],
-      gaps: [
-        "Full eight-question coverage was not completed in this attempt.",
-      ],
-      next: [
-        "Start a new session when ready to complete all module-based questions.",
-        "Review module daily tasks before your next attempt.",
-      ],
-    });
+    await finishInterviewSession();
   }
 
   return (
@@ -393,8 +480,9 @@ export function InterviewSession({
           </h2>
           <p className="mt-2 text-base leading-relaxed text-slate-600">
             {TOTAL_QUESTIONS} personalized questions drawn from your completed cohort
-            days. This is a proctored session with webcam monitoring, tab focus checks,
-            and voice or typed responses.
+            days — complete all {TOTAL_QUESTIONS} within{" "}
+            <strong>15 minutes</strong>. This is a proctored session with webcam
+            monitoring, tab focus checks, and voice or typed responses.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
@@ -402,6 +490,9 @@ export function InterviewSession({
             </span>
             <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
               Voice input: {speechSupported ? "enabled" : "limited"}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+              Time limit: 15 min
             </span>
             <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
               AI read-aloud: {voiceSupported ? "enabled" : "off"}
@@ -455,6 +546,20 @@ export function InterviewSession({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {!done && active ? (
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold tabular-nums ${
+                    timeLeftSec <= 60
+                      ? "bg-red-100 text-red-800 animate-pulse"
+                      : timeLeftSec <= 180
+                        ? "bg-amber-100 text-amber-900"
+                        : "bg-indigo-100 text-indigo-800"
+                  }`}
+                  title="15-minute interview window"
+                >
+                  Time left {formatInterviewTimeLeft(timeLeftSec)}
+                </span>
+              ) : null}
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
                 Q {Math.min(questionIndex, TOTAL_QUESTIONS)}/{TOTAL_QUESTIONS}
               </span>
@@ -490,6 +595,18 @@ export function InterviewSession({
                     </dt>
                     <dd className="font-medium text-slate-900">
                       {candidate.member.jobRole}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-medium uppercase text-slate-400">
+                      Time remaining
+                    </dt>
+                    <dd
+                      className={`font-semibold tabular-nums ${
+                        timeLeftSec <= 60 ? "text-red-700" : "text-slate-900"
+                      }`}
+                    >
+                      {formatInterviewTimeLeft(timeLeftSec)} / 15:00
                     </dd>
                   </div>
                   <div>
@@ -650,15 +767,21 @@ export function InterviewSession({
                     onCopy={(e) => e.preventDefault()}
                     onCut={(e) => e.preventDefault()}
                     rows={4}
-                    placeholder="Type or dictate your answer (paste disabled)…"
+                    placeholder={
+                      timeExpired
+                        ? "Time is up — session ended."
+                        : "Type or dictate your answer (paste disabled)…"
+                    }
                     className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-400"
-                    disabled={loading || !cameraReady}
+                    disabled={loading || !cameraReady || timeExpired}
                   />
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => submitAnswer(input)}
-                      disabled={loading || !input.trim() || !cameraReady}
+                      disabled={
+                        loading || !input.trim() || !cameraReady || timeExpired
+                      }
                       className={`${btnPrimaryMd} disabled:opacity-50`}
                     >
                       Send answer
@@ -666,7 +789,7 @@ export function InterviewSession({
                     <button
                       type="button"
                       onClick={toggleMic}
-                      disabled={!speechSupported || loading}
+                      disabled={!speechSupported || loading || timeExpired}
                       className={`rounded-lg border px-4 py-2 text-sm font-medium ${
                         listening
                           ? "border-red-300 bg-red-50 text-red-700"
