@@ -77,8 +77,10 @@ export function InterviewSession({
   const [lastQuestionScore, setLastQuestionScore] = useState<number | null>(null);
   const [timeLeftSec, setTimeLeftSec] = useState(INTERVIEW_TIME_LIMIT_SEC);
   const [timeExpired, setTimeExpired] = useState(false);
+  const [interviewDeadlineMs, setInterviewDeadlineMs] = useState<number | null>(
+    null,
+  );
   const draftRef = useRef("");
-  const deadlineRef = useRef<number | null>(null);
   const timeUpHandledRef = useRef(false);
   const router = useRouter();
 
@@ -134,33 +136,34 @@ export function InterviewSession({
   const inExamRoom = active || done;
 
   const startInterviewTimer = useCallback(() => {
-    deadlineRef.current = Date.now() + INTERVIEW_TIME_LIMIT_SEC * 1000;
+    setInterviewDeadlineMs(Date.now() + INTERVIEW_TIME_LIMIT_SEC * 1000);
     timeUpHandledRef.current = false;
     setTimeExpired(false);
     setTimeLeftSec(INTERVIEW_TIME_LIMIT_SEC);
   }, []);
 
   const clearInterviewTimer = useCallback(() => {
-    deadlineRef.current = null;
+    setInterviewDeadlineMs(null);
     timeUpHandledRef.current = false;
     setTimeExpired(false);
     setTimeLeftSec(INTERVIEW_TIME_LIMIT_SEC);
   }, []);
 
   useEffect(() => {
-    if (!active || done || !deadlineRef.current) return;
+    if (!active || done || interviewDeadlineMs == null) return;
 
     const tick = () => {
-      const deadline = deadlineRef.current;
-      if (!deadline) return;
-      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const left = Math.max(
+        0,
+        Math.ceil((interviewDeadlineMs - Date.now()) / 1000),
+      );
       setTimeLeftSec(left);
     };
 
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [active, done, sessionId]);
+  }, [active, done, interviewDeadlineMs]);
 
   const pushMessage = useCallback((role: ChatMessage["role"], text: string) => {
     setMessages((prev) => [
@@ -301,11 +304,11 @@ export function InterviewSession({
   );
 
   useEffect(() => {
-    if (!active || done || timeLeftSec > 0 || !deadlineRef.current) return;
+    if (!active || done || timeLeftSec > 0 || interviewDeadlineMs == null) return;
     if (timeUpHandledRef.current) return;
     timeUpHandledRef.current = true;
     void finishInterviewSession({ timeUp: true });
-  }, [active, done, finishInterviewSession, timeLeftSec]);
+  }, [active, done, finishInterviewSession, interviewDeadlineMs, timeLeftSec]);
 
   async function beginTestAfterTerms() {
     setError(null);
