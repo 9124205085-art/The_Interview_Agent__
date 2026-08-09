@@ -9,7 +9,7 @@ backend/src/
 ├── lib/
 │   ├── data.ts              reads ../data/*.json
 │   ├── session.ts           candidate cookie helpers
-│   ├── requireCandidate.ts  auth for dashboard pages
+│   (auth: `frontend/src/lib/requireCandidate.ts`)
 │   └── interview/           session store, questions, LLM, handlers
 ├── types/
 │   ├── candidate.ts

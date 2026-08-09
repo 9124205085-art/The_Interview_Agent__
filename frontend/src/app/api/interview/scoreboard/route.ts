@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { buildInterviewScoreboard } from "@backend/lib/interviewResults";
-import { requireCandidate } from "@backend/lib/requireCandidate";
+import { requireCandidate } from "@/lib/requireCandidate";
 
 export const dynamic = "force-dynamic";
 

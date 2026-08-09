@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCandidateById } from "./data";
-import { CANDIDATE_SESSION_COOKIE } from "./session";
-import type { CandidateRecord } from "../types/candidate";
+import { getCandidateById } from "@backend/lib/data";
+import { CANDIDATE_SESSION_COOKIE } from "@backend/lib/session";
+import type { CandidateRecord } from "@backend/types/candidate";
 
 export async function requireCandidate(): Promise<CandidateRecord> {
   const cookieStore = await cookies();

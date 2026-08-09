@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCurriculum } from "@backend/lib/data";
-import { requireCandidate } from "@backend/lib/requireCandidate";
+import { requireCandidate } from "@/lib/requireCandidate";
 import { InterviewSession } from "@/components/interview/InterviewSession";
 
 export default async function InterviewTestPage() {

@@ -1,4 +1,4 @@
-import { requireCandidate } from "@backend/lib/requireCandidate";
+import { requireCandidate } from "@/lib/requireCandidate";
 import { getCurriculum } from "@backend/lib/data";
 import { getInterviewResult } from "@backend/lib/interviewResults";
 import { buildCandidateProfile } from "@/lib/candidateProfile";
