@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: the-interview-agent
+    runtime: node
+    plan: free
+    buildCommand: npm install --prefix frontend --include=dev && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false

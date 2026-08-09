@@ -5,7 +5,7 @@ Monorepo-style layout: **frontend** (Next.js UI), **backend** (server logic), **
 **Repository:** [https://github.com/9124205085-art/The_Interview_Agent__.git](https://github.com/9124205085-art/The_Interview_Agent__.git)
 
 **Submission docs:** [PROMPTS.md](./PROMPTS.md) — AI prompts used to build this project.  
-**Hackathon:** [docs/hackathon-compliance.md](./docs/hackathon-compliance.md) · [docs/api-demo-for-judges.md](./docs/api-demo-for-judges.md)
+**Hackathon:** [docs/hackathon-compliance.md](./docs/hackathon-compliance.md) · [docs/api-demo-for-judges.md](./docs/api-demo-for-judges.md) · [docs/deploy-render.md](./docs/deploy-render.md)
 
 ---
 

@@ -1,18 +1,16 @@
 import path from "path";
 import { existsSync } from "fs";
 
-/** Resolve repo `data/` whether Next.js cwd is `frontend/` or monorepo root. */
+/** Resolve repo `data/` (Render cwd is usually repo root; locally may be `frontend/`). */
 export function getRepoDataDir(): string {
-  const markerFiles = ["candidates.json", "interview-scores.json"];
-  const tryDirs = [
-    path.join(process.cwd(), "data"),
-    path.join(process.cwd(), "..", "data"),
-    path.join(__dirname, "..", "..", "..", "data"),
-  ];
-  for (const dir of tryDirs) {
-    if (markerFiles.some((f) => existsSync(path.join(dir, f)))) {
-      return dir;
-    }
+  const marker = "candidates.json";
+  const cwdData = path.join(process.cwd(), "data");
+  if (existsSync(path.join(cwdData, marker))) {
+    return cwdData;
   }
-  return path.join(process.cwd(), "..", "data");
+  const parentData = path.join(process.cwd(), "..", "data");
+  if (existsSync(path.join(parentData, marker))) {
+    return parentData;
+  }
+  return cwdData;
 }
